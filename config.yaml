@@ -1,0 +1,17 @@
+pricing_method: latest_close      # or vwap_7d
+contribution: 500
+
+# Choose one:
+# model: custom
+# model: market_cap
+# model: volume_weighted
+# model: risk_parity
+model: risk_parity
+
+custom_weights:     # only used for custom model
+  BTC: 0.4
+  ETH: 0.2
+  SOL: 0.2
+  NEAR: 0.1
+  ZEC: 0.1
+  USDC: 0.0

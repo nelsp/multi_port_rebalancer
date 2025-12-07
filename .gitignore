@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Data files (exclude large CSV files)
+Data/*.csv
+data/*.csv
+*.csv
+
+# Excel output files
+*.xlsx
+*.xls
+~$*.xlsx
+
+# Backup folders
+bku/
+backup/
+*.bku
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+venv/
+env/
+ENV/
+.venv
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Config with sensitive data (if needed)
+# config.yaml  # Uncomment if config contains sensitive info
+
