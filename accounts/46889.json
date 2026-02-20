@@ -1,0 +1,22 @@
+{
+  "account_name": "46889",
+  "benchmark": "custom",
+  "custom_weights": {
+    "btc": 0.25,
+    "eth": 0.25,
+    "bnb": 0.25,
+    "usdc": 0.25
+  },
+  "holdings": {
+    "btc": 0.0034,
+    "eth": 0.034,
+    "zec": 0.55,
+    "near": 12.34,
+    "bnb": 2.34,
+    "ada": 0.00,
+    "aave": 0.00,
+    "sol": 3.67,
+    "xrp": 2.45,
+    "usdc": 200.00
+  }
+}

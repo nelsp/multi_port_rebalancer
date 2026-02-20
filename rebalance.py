@@ -7,16 +7,18 @@ import glob
 from scipy.optimize import minimize
 
 # ----------------------------- CONFIG -----------------------------
-with open('config.yaml', 'r') as f:
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+with open(os.path.join(SCRIPT_DIR, 'config.yaml'), 'r') as f:
     config = yaml.safe_load(f)
 
 PRICING_METHOD = config['pricing_method']
 CONTRIBUTION = config.get('contribution', 0)
 MODEL = config.get('model', 'custom').lower()
 
-DATA_DIR = 'data'
-HOLDINGS_FILE = 'holdings.csv'
-OUTPUT_FILE = f'port_rebal_{datetime.now().strftime("%Y%m%d")}.xlsx'
+DATA_DIR = os.path.join(SCRIPT_DIR, 'Data')
+HOLDINGS_FILE = os.path.join(SCRIPT_DIR, 'holdings.csv')
+OUTPUT_FILE = os.path.join(SCRIPT_DIR, f'port_rebal_{datetime.now().strftime("%Y%m%d")}.xlsx')
 
 # ----------------------------- HELPER ---------------------------
 def _normalize(w_dict: dict):
@@ -25,17 +27,36 @@ def _normalize(w_dict: dict):
         largest = max(w_dict, key=w_dict.get)
         w_dict[largest] = round(w_dict[largest] + (1.0 - total), 6)
 
+def build_symbol_file_map() -> dict:
+    """
+    Scan all CSV files in DATA_DIR, read the SYMBOL column from each,
+    and return a mapping of {SYMBOL: filepath}.
+    Handles UUID-named files like query-2f4ad9a6-...-011b3ebcf122.csv.
+    """
+    pattern = os.path.join(DATA_DIR, '*.csv')
+    files = glob.glob(pattern)
+    symbol_map = {}
+    for fp in files:
+        try:
+            df = pd.read_csv(fp, nrows=1)
+            df.columns = df.columns.str.strip()
+            if 'SYMBOL' in df.columns:
+                symbol = df['SYMBOL'].iloc[0].upper()
+                symbol_map[symbol] = fp
+        except Exception as e:
+            print(f"  Warning: could not read {fp}: {e}")
+    return symbol_map
+
+SYMBOL_FILE_MAP = build_symbol_file_map()
+print(f"Found data files for: {', '.join(sorted(SYMBOL_FILE_MAP.keys()))}")
+
 # ----------------------------- DYNAMIC WEIGHTS -----------------------------
 def calculate_market_cap_weights() -> dict:
-    pattern = os.path.join(DATA_DIR, '*_180days.csv')
-    files = glob.glob(pattern)
     totals = {}
     print("\nCalculating market-cap weights...")
-    for fp in files:
-        ticker = os.path.basename(fp).split('_')[0].upper()
+    for ticker, fp in SYMBOL_FILE_MAP.items():
         if ticker == 'USDC': continue
         df = pd.read_csv(fp)
-        # Normalize column names (strip whitespace)
         df.columns = df.columns.str.strip()
         if 'PRICE_USD' not in df.columns or 'CIRCULATING_TOKENS' not in df.columns:
             print(f"  Warning: {ticker} missing required columns, skipping")
@@ -53,15 +74,11 @@ def calculate_market_cap_weights() -> dict:
     return weights
 
 def calculate_volume_weights() -> dict:
-    pattern = os.path.join(DATA_DIR, '*_180days.csv')
-    files = glob.glob(pattern)
     totals = {}
     print("\nCalculating volume-weighted weights...")
-    for fp in files:
-        ticker = os.path.basename(fp).split('_')[0].upper()
+    for ticker, fp in SYMBOL_FILE_MAP.items():
         if ticker == 'USDC': continue
         df = pd.read_csv(fp)
-        # Normalize column names (strip whitespace)
         df.columns = df.columns.str.strip()
         if 'CEX_TRADING_VOLUME_24H_USD' not in df.columns:
             print(f"  Warning: {ticker} missing CEX_TRADING_VOLUME_24H_USD column, skipping")
@@ -84,18 +101,21 @@ def calculate_risk_parity_weights(active_assets: list) -> dict:
     print("\nCalculating risk-parity weights (Equal Risk Contribution)...")
     prices = {}
     for ticker in active_assets:
-        pattern = os.path.join(DATA_DIR, f'{ticker.upper()}*_180days.csv')
-        files = glob.glob(pattern)
-        if not files:
-            raise FileNotFoundError(f"No data for {ticker}")
-        df = pd.read_csv(files[0])
-        # Normalize column names (strip whitespace)
+        t = ticker.upper()
+        if t not in SYMBOL_FILE_MAP:
+            print(f"  Warning: No data file for {t}, skipping from risk-parity")
+            continue
+        df = pd.read_csv(SYMBOL_FILE_MAP[t])
         df.columns = df.columns.str.strip()
         if 'DATE' not in df.columns or 'PRICE_USD' not in df.columns:
-            raise ValueError(f"{ticker} missing required columns (DATE or PRICE_USD). Available: {list(df.columns)}")
+            raise ValueError(f"{t} missing required columns (DATE or PRICE_USD). Available: {list(df.columns)}")
         df['DATE'] = pd.to_datetime(df['DATE'])
         df = df.sort_values('DATE')
         prices[ticker] = df.set_index('DATE')['PRICE_USD']
+
+    included_assets = list(prices.keys())
+    if not included_assets:
+        raise ValueError("No assets with price data found for risk-parity")
 
     price_df = pd.DataFrame(prices).dropna()
     if len(price_df) < 30:
@@ -112,7 +132,7 @@ def calculate_risk_parity_weights(active_assets: list) -> dict:
         target = rc.mean()
         return np.sum((rc - target)**2)
 
-    n = len(active_assets)
+    n = len(included_assets)
     x0 = np.ones(n) / n
     bounds = [(0, 1) for _ in range(n)]
     constraints = {'type': 'eq', 'fun': lambda w: np.sum(w) - 1}
@@ -122,7 +142,7 @@ def calculate_risk_parity_weights(active_assets: list) -> dict:
     if not res.success:
         print("Warning: Risk-parity optimization did not converge perfectly")
 
-    weights = dict(zip(active_assets, np.round(res.x, 6)))
+    weights = dict(zip(included_assets, np.round(res.x, 6)))
     weights['USDC'] = 0.0
     _normalize(weights)
     return weights
@@ -164,18 +184,17 @@ for asset in portfolio_assets:
 weight_sum = sum(target_weights.values())
 if not (0.999999 <= weight_sum <= 1.000001):
     raise ValueError(f"Weights must sum to 1.0 (current sum: {weight_sum:.10f})")
-print(f"Model weights OK (sum = {weight_sum:.10f}) ✓")
+print(f"Model weights OK (sum = {weight_sum:.10f}) [OK]")
 
 # ----------------------------- PRICE FETCHING -----------------------------
 def get_price_and_date(ticker: str) -> tuple[float, str]:
-    pattern = os.path.join(DATA_DIR, f'{ticker.upper()}*_180days.csv')
-    files = glob.glob(pattern)
-    if not files:
-        if ticker == 'USDC':
-            return 1.0, 'fixed'
-        raise FileNotFoundError(f"No data file for {ticker}")
-    df = pd.read_csv(files[0])
-    # Normalize column names (strip whitespace)
+    t = ticker.upper()
+    if t == 'USDC':
+        return 1.0, 'fixed'
+    if t not in SYMBOL_FILE_MAP:
+        print(f"  Warning: No data file for {t}, using price=0")
+        return 0.0, 'no data'
+    df = pd.read_csv(SYMBOL_FILE_MAP[t])
     df.columns = df.columns.str.strip()
     df['DATE'] = pd.to_datetime(df['DATE'])
     df = df.sort_values('DATE', ascending=False)
@@ -184,10 +203,15 @@ def get_price_and_date(ticker: str) -> tuple[float, str]:
         price = df.iloc[0]['PRICE_USD']
         date_used = df.iloc[0]['DATE'].strftime('%Y-%m-%d')
     elif PRICING_METHOD == 'vwap_7d':
-        if 'TRADING_VOLUME_24H_USD' not in df.columns:
-            raise ValueError(f"VWAP pricing requires TRADING_VOLUME_24H_USD column, but it's missing for {ticker}. Available columns: {list(df.columns)}")
+        vol_col = None
+        for candidate in ['CEX_TRADING_VOLUME_24H_USD', 'TRADING_VOLUME_24H_USD']:
+            if candidate in df.columns:
+                vol_col = candidate
+                break
+        if vol_col is None:
+            raise ValueError(f"VWAP pricing requires a volume column, but none found for {t}. Available columns: {list(df.columns)}")
         recent = df.head(7)
-        price = (recent['PRICE_USD'] * recent['TRADING_VOLUME_24H_USD']).sum() / recent['TRADING_VOLUME_24H_USD'].sum()
+        price = (recent['PRICE_USD'] * recent[vol_col]).sum() / recent[vol_col].sum()
         date_used = f"7-day VWAP to {df.iloc[0]['DATE'].strftime('%Y-%m-%d')}"
     else:
         raise ValueError("pricing_method must be 'latest_close' or 'vwap_7d'")
@@ -240,8 +264,8 @@ results_df = pd.DataFrame(results)
 total_trade = results_df['trade_value'].sum()
 tolerance = 1e-6 * adjusted_total
 if abs(total_trade - CONTRIBUTION) > tolerance:
-    raise ValueError(f"Trade sum ({total_trade:,.2f}) ≠ contribution ({CONTRIBUTION:,.2f})")
-print("Trade values sum correctly to contribution ✓")
+    raise ValueError(f"Trade sum ({total_trade:,.2f}) != contribution ({CONTRIBUTION:,.2f})")
+print("Trade values sum correctly to contribution [OK]")
 
 # ----------------------------- EXCEL OUTPUT -----------------------------
 empty_row = {col: '' for col in results_df.columns}
@@ -278,7 +302,7 @@ with pd.ExcelWriter(OUTPUT_FILE, engine='openpyxl') as writer:
     pd.DataFrame(price_rows).to_excel(writer, sheet_name='Sheet1', index=False, header=False,
                                       startrow=6+len(results_df)+14)
 
-print(f"\nRebalancing complete → {OUTPUT_FILE}")
+print(f"\nRebalancing complete -> {OUTPUT_FILE}")
 print(f"Model used: {weight_source}")
 if MODEL == 'risk_parity':
     print("Final risk-parity weights:", {k: f"{v:.4%}" for k, v in target_weights.items() if v > 0})

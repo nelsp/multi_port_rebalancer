@@ -6,12 +6,16 @@ contribution: 500
 # model: market_cap
 # model: volume_weighted
 # model: risk_parity
-model: risk_parity
+model: market_cap
 
 custom_weights:     # only used for custom model
   BTC: 0.4
   ETH: 0.2
   SOL: 0.2
   NEAR: 0.1
-  ZEC: 0.1
+  XRP: 0.0
+  ADA: 0.0
+  AAVE: 0.0
+  BNB: 0.1
+  ZEC: 0.0
   USDC: 0.0

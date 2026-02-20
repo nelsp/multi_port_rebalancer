@@ -1,0 +1,10 @@
+{
+  "account_name": deep_corp,
+  "benchmark": "cap_weighted",
+  "holdings": {
+    "btc": 0.0034,
+    "eth": 0.034,
+    "zec": 0.55,
+    "usdc": 12.00
+  }
+}

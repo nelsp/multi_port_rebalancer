@@ -1,0 +1,12 @@
+{
+  "account_name": 1234,
+  "benchmark": "risk parity",
+  "holdings": {
+    "btc": 0.0034,
+    "eth": 0.034,
+    "zec": 0.55,
+    "near": 12.34,
+    "bnb": 2.34
+    "usdc": 1.00
+  }
+}
