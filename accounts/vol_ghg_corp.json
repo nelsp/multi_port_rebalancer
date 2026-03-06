@@ -1,0 +1,16 @@
+{
+  "account_name": "volume_ghg_corp",
+  "benchmark": "volume_weighted",
+  "holdings": {
+    "btc": 0.00418255,
+    "eth": 0.07777552,
+    "zec": 0.0,
+    "near": 0.0,
+    "bnb": 0.0,
+    "ada": 0.00,
+    "aave": 0.00,
+    "sol": 0.30785626,
+    "xrp": 15.412638,
+    "usdc": 0.00
+  }
+}

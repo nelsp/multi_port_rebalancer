@@ -1,0 +1,16 @@
+{
+  "account_name": "risk_parity_corp",
+  "benchmark": "risk_parity",
+  "holdings": {
+    "btc": 0.0013441,
+    "eth": 0.00338028,
+    "zec": 0.12964477,
+    "near": 45.71428571,
+    "bnb": 0.11507848,
+    "ada": 153.270362,
+    "aave": 0.42394349,
+    "sol": 0.64661272,
+    "xrp": 38.4898,
+    "usdc": 0.00
+  }
+}

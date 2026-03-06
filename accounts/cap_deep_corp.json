@@ -1,0 +1,16 @@
+{
+  "account_name": "cap_deep_corp",
+  "benchmark": "cap_weighted",
+  "holdings": {
+    "btc": 0.00521454,
+    "eth": 0.03600952,
+    "zec": 0.0,
+    "near": 0.0,
+    "bnb": 0.0424695,
+    "ada": 0.00,
+    "aave": 0.00,
+    "sol": 0.0,
+    "xrp": 17.492303,
+    "usdc": 0.00
+  }
+}

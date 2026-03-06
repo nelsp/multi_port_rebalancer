@@ -2,21 +2,24 @@
   "account_name": "acme_corp",
   "benchmark": "custom",
   "custom_weights": {
-    "btc": 0.4,
-    "eth": 0.3,
-    "bnb": 0.2,
+    "btc": 0.2,
+    "eth": 0.2,
+    "sol": 0.2,
+    "bnb": 0.1,
+    "xrp": 0.1,
+    "zec": 0.1,
     "usdc": 0.1
   },
   "holdings": {
-    "btc": 0.0034,
-    "eth": 0.034,
-    "zec": 0.55,
-    "near": 12.34,
-    "bnb": 2.34,
+    "btc": 0.0,
+    "eth": 0.0,
+    "zec": 0.0,
+    "near": 0.0,
+    "bnb": 0.0,
     "ada": 0.00,
     "aave": 0.00,
-    "sol": 3.67,
-    "xrp": 2.45,
-    "usdc": 200.00
+    "sol": 0.0,
+    "xrp": 0.0,
+    "usdc": 500.00
   }
 }
