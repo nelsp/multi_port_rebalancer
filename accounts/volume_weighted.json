@@ -1,5 +1,5 @@
 {
-  "account_name": "volume_ghg_corp",
+  "account_name": "volume_weighted_corp",
   "benchmark": "volume_weighted",
   "holdings": {
     "btc": 0.00418255,

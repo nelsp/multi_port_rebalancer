@@ -1,5 +1,5 @@
 {
-  "account_name": "cap_deep_corp",
+  "account_name": "cap_weighted_corp",
   "benchmark": "cap_weighted",
   "holdings": {
     "btc": 0.00521454,

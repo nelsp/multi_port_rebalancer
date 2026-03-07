@@ -1,5 +1,5 @@
 {
-  "account_name": "acme_corp",
+  "account_name": "custom2tier_corp",
   "benchmark": "custom",
   "custom_weights": {
     "btc": 0.2,
@@ -8,7 +8,7 @@
     "bnb": 0.1,
     "xrp": 0.1,
     "zec": 0.1,
-    "usdc": 0.1
+    "ada": 0.1
   },
   "holdings": {
     "btc": 0.0,
